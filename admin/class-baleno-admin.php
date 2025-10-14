@@ -1023,7 +1023,7 @@ class Baleno_Admin {
                 </div>
             <?php endif; ?>
 
-            <form id="edit-booking-form" class="baleno-manual-booking-form">
+            <form id="edit-booking-form" class="baleno-manual-booking-form" method="post" action="" onsubmit="return false;">
                 <?php wp_nonce_field('baleno_admin_nonce', 'nonce'); ?>
                 <input type="hidden" name="booking_id" value="<?php echo esc_attr($booking_id); ?>">
 

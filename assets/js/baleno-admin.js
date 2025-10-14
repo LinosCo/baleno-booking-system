@@ -449,15 +449,19 @@ jQuery(document).ready(function($) {
 
     // Initialize price calculation for edit form
     if ($('#edit-booking-form').length) {
-        console.log('Edit booking form detected, initializing...');
+        console.log('✅ Edit booking form detected, initializing...');
+        console.log('Form element:', $('#edit-booking-form')[0]);
+        console.log('BalenoAdmin object:', balenoAdmin);
         // Trigger price calculation on page load
         calculateTotalPrice();
     }
 
     // Submit edit booking form
     $(document).on('submit', '#edit-booking-form', function(e) {
+        console.log('🚀 Edit booking form submit event triggered!');
         e.preventDefault();
-        console.log('Edit booking form submitted');
+        e.stopPropagation();
+        console.log('✅ Default prevented, proceeding with AJAX...');
 
         // Validate form
         if (!this.checkValidity()) {
