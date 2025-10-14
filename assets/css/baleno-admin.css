@@ -1,15 +1,24 @@
 /* Baleno Booking System - Admin Styles */
+/* Colori ufficiali Baleno San Zeno */
+:root {
+    --baleno-blue: #2B548E;
+    --baleno-yellow: #EDBA00;
+    --baleno-dark: #1a1a1a;
+    --baleno-light: #f8f9fa;
+}
 
 .baleno-admin-page {
     background: #f5f5f5;
     padding: 20px;
     margin-left: -20px;
     margin-right: -20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .baleno-admin-page h1 {
-    color: #2c5aa0;
+    color: var(--baleno-blue);
     margin-bottom: 30px;
+    font-weight: 700;
 }
 
 /* Statistics Dashboard */
@@ -86,7 +95,7 @@
 
 .filter-btn:hover,
 .filter-btn.active {
-    background: #2c5aa0;
+    background: var(--baleno-blue);
     color: white;
 }
 
@@ -103,7 +112,7 @@
 }
 
 .baleno-table-container table th {
-    background: #2c5aa0;
+    background: var(--baleno-blue);
     color: white;
     font-weight: 600;
     padding: 12px 10px;
@@ -246,7 +255,7 @@
 }
 
 .baleno-modal h2 {
-    color: #2c5aa0;
+    color: var(--baleno-blue);
     margin-top: 0;
 }
 
@@ -283,13 +292,13 @@
     margin-bottom: 25px;
     padding: 20px;
     background: #f9f9f9;
-    border-left: 4px solid #2c5aa0;
+    border-left: 4px solid var(--baleno-blue);
     border-radius: 4px;
 }
 
 #booking-details-content .detail-section h3 {
     margin-top: 0;
-    color: #2c5aa0;
+    color: var(--baleno-blue);
 }
 
 #booking-details-content .detail-row {
@@ -344,7 +353,7 @@
 
 .calendar-legend h3 {
     margin-top: 0;
-    color: #2c5aa0;
+    color: var(--baleno-blue);
 }
 
 .legend-items {
@@ -381,7 +390,7 @@
     width: 20px;
     height: 20px;
     border: 3px solid #f3f3f3;
-    border-top: 3px solid #2c5aa0;
+    border-top: 3px solid var(--baleno-blue);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -436,13 +445,13 @@
     padding: 25px;
     margin-bottom: 25px;
     border-radius: 6px;
-    border-left: 4px solid #2c5aa0;
+    border-left: 4px solid var(--baleno-blue);
 }
 
 .form-section h2 {
     margin-top: 0;
     margin-bottom: 20px;
-    color: #2c5aa0;
+    color: var(--baleno-blue);
     font-size: 20px;
     border-bottom: 2px solid #e0e0e0;
     padding-bottom: 10px;
@@ -486,7 +495,7 @@
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #2c5aa0;
+    border-color: var(--baleno-blue);
     box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
 }
 
@@ -513,7 +522,7 @@
 
 .equipment-item:hover {
     background: #f0f0f0;
-    border-color: #2c5aa0;
+    border-color: var(--baleno-blue);
 }
 
 .equipment-item input[type="checkbox"] {
@@ -529,7 +538,7 @@
 }
 
 .equipment-price {
-    color: #2c5aa0;
+    color: var(--baleno-blue);
     font-weight: 600;
 }
 
@@ -537,7 +546,7 @@
     background: white;
     padding: 20px;
     border-radius: 6px;
-    border: 2px solid #2c5aa0;
+    border: 2px solid var(--baleno-blue);
 }
 
 .price-row {
@@ -555,10 +564,10 @@
 
 .price-row.total {
     font-size: 20px;
-    color: #2c5aa0;
+    color: var(--baleno-blue);
     padding-top: 15px;
     margin-top: 10px;
-    border-top: 2px solid #2c5aa0;
+    border-top: 2px solid var(--baleno-blue);
 }
 
 .form-actions {
