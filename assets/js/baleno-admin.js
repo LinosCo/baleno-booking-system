@@ -447,14 +447,22 @@ jQuery(document).ready(function($) {
 
     // ========== EDIT BOOKING FORM ==========
 
-    // Initialize price calculation for edit form
-    if ($('#edit-booking-form').length) {
-        console.log('✅ Edit booking form detected, initializing...');
-        console.log('Form element:', $('#edit-booking-form')[0]);
-        console.log('BalenoAdmin object:', balenoAdmin);
-        // Trigger price calculation on page load
-        calculateTotalPrice();
-    }
+    // Initialize price calculation for edit form with delay to ensure DOM is ready
+    setTimeout(function() {
+        if ($('#edit-booking-form').length) {
+            console.log('✅ Edit booking form detected, initializing...');
+            console.log('Form element:', $('#edit-booking-form')[0]);
+            console.log('BalenoAdmin object:', balenoAdmin);
+            // Trigger price calculation on page load
+            calculateTotalPrice();
+        } else {
+            console.log('⚠️ Edit booking form NOT found in DOM');
+            console.log('Available forms:', $('form').length);
+            $('form').each(function(i) {
+                console.log('Form ' + i + ' ID:', $(this).attr('id'));
+            });
+        }
+    }, 100);
 
     // Submit edit booking form
     $(document).on('submit', '#edit-booking-form', function(e) {
