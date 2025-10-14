@@ -12,10 +12,9 @@ class Baleno_Admin {
         $this->version = $version;
     }
 
-    public function enqueue_styles() {
+    public function enqueue_styles($hook) {
         // Only load on Baleno pages
-        $screen = get_current_screen();
-        if (!$screen || strpos($screen->id, 'baleno') === false) {
+        if (strpos($hook, 'baleno') === false) {
             return;
         }
 
@@ -28,10 +27,9 @@ class Baleno_Admin {
         );
     }
 
-    public function enqueue_scripts() {
+    public function enqueue_scripts($hook) {
         // Only load on Baleno pages
-        $screen = get_current_screen();
-        if (!$screen || strpos($screen->id, 'baleno') === false) {
+        if (strpos($hook, 'baleno') === false) {
             return;
         }
 
