@@ -40,6 +40,7 @@ class Baleno_Booking {
         $this->loader->add_action('wp_ajax_baleno_reject_booking', $plugin_admin, 'reject_booking');
         $this->loader->add_action('wp_ajax_baleno_delete_booking', $plugin_admin, 'delete_booking');
         $this->loader->add_action('wp_ajax_baleno_get_bookings', $plugin_admin, 'get_bookings_ajax');
+        $this->loader->add_action('wp_ajax_baleno_create_manual_booking', $plugin_admin, 'create_manual_booking');
     }
 
     private function define_public_hooks() {

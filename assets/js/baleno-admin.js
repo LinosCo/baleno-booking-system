@@ -282,4 +282,159 @@ jQuery(document).ready(function($) {
     window.printBookingDetails = function() {
         window.print();
     };
+
+    // ========== MANUAL BOOKING FORM ==========
+
+    // Calculate total price
+    function calculateTotalPrice() {
+        var spacePrice = 0;
+        var equipmentPrice = 0;
+
+        // Get space price based on selected time slot
+        var timeSlot = $('#time_slot').val();
+        var selectedOption = $('#space_id option:selected');
+
+        if (selectedOption.length && timeSlot) {
+            switch(timeSlot) {
+                case '1h':
+                    spacePrice = parseFloat(selectedOption.data('price-1h')) || 0;
+                    break;
+                case '2h':
+                    spacePrice = parseFloat(selectedOption.data('price-2h')) || 0;
+                    break;
+                case 'half_day':
+                    spacePrice = parseFloat(selectedOption.data('price-half')) || 0;
+                    break;
+                case 'full_day':
+                    spacePrice = parseFloat(selectedOption.data('price-full')) || 0;
+                    break;
+            }
+        }
+
+        // Calculate equipment price
+        $('input[name="equipment_ids[]"]:checked').each(function() {
+            equipmentPrice += parseFloat($(this).data('price')) || 0;
+        });
+
+        // Update display
+        $('#space-price').text('€ ' + spacePrice.toFixed(2).replace('.', ','));
+        $('#equipment-price').text('€ ' + equipmentPrice.toFixed(2).replace('.', ','));
+        var total = spacePrice + equipmentPrice;
+        $('#total-price').text('€ ' + total.toFixed(2).replace('.', ','));
+        $('#total_price').val(total.toFixed(2));
+    }
+
+    // Trigger price calculation on change
+    $('#space_id, #time_slot').on('change', calculateTotalPrice);
+    $('input[name="equipment_ids[]"]').on('change', calculateTotalPrice);
+
+    // Validate codice fiscale
+    $('#codice_fiscale').on('blur', function() {
+        var cf = $(this).val().toUpperCase();
+        $(this).val(cf);
+
+        if (cf.length > 0 && cf.length !== 16) {
+            $(this).css('border-color', '#dc3545');
+            alert('Il Codice Fiscale deve essere di 16 caratteri');
+        } else {
+            $(this).css('border-color', '');
+        }
+    });
+
+    // Submit manual booking form
+    $('#manual-booking-form').on('submit', function(e) {
+        e.preventDefault();
+
+        // Validate form
+        if (!this.checkValidity()) {
+            this.reportValidity();
+            return;
+        }
+
+        // Check total price
+        if (parseFloat($('#total_price').val()) <= 0) {
+            alert('Seleziona una sala e una fascia oraria prima di procedere');
+            return;
+        }
+
+        var $btn = $(this).find('button[type="submit"]');
+        var originalText = $btn.html();
+        $btn.prop('disabled', true).html('⏳ Salvataggio in corso...');
+
+        // Prepare form data
+        var formData = $(this).serializeArray();
+        formData.push({ name: 'action', value: 'baleno_create_manual_booking' });
+        formData.push({ name: 'nonce', value: balenoAdmin.nonce });
+
+        $.ajax({
+            url: balenoAdmin.ajaxurl,
+            type: 'POST',
+            data: $.param(formData),
+            success: function(response) {
+                if (response.success) {
+                    $('#form-message')
+                        .removeClass('error')
+                        .addClass('success')
+                        .html('✅ ' + response.data.message + '<br>Codice prenotazione: <strong>' + response.data.booking_code + '</strong>')
+                        .fadeIn();
+
+                    // Reset form
+                    $('#manual-booking-form')[0].reset();
+                    calculateTotalPrice();
+
+                    // Redirect to bookings list after 2 seconds
+                    setTimeout(function() {
+                        window.location.href = balenoAdmin.ajaxurl.replace('admin-ajax.php', 'admin.php?page=baleno-bookings');
+                    }, 2000);
+                } else {
+                    $('#form-message')
+                        .removeClass('success')
+                        .addClass('error')
+                        .html('❌ ' + response.data.message)
+                        .fadeIn();
+                    $btn.prop('disabled', false).html(originalText);
+                }
+            },
+            error: function() {
+                $('#form-message')
+                    .removeClass('success')
+                    .addClass('error')
+                    .html('❌ Errore durante il salvataggio della prenotazione')
+                    .fadeIn();
+                $btn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+
+    // Auto-fill end time based on time slot
+    $('#time_slot, #start_time').on('change', function() {
+        var startTime = $('#start_time').val();
+        var timeSlot = $('#time_slot').val();
+
+        if (startTime && timeSlot) {
+            var start = new Date('1970-01-01T' + startTime + ':00');
+            var hours = 0;
+
+            switch(timeSlot) {
+                case '1h':
+                    hours = 1;
+                    break;
+                case '2h':
+                    hours = 2;
+                    break;
+                case 'half_day':
+                    hours = 4;
+                    break;
+                case 'full_day':
+                    hours = 8;
+                    break;
+            }
+
+            if (hours > 0) {
+                start.setHours(start.getHours() + hours);
+                var endTime = start.toTimeString().substr(0, 5);
+                $('#end_time').val(endTime);
+            }
+        }
+    });
 });
