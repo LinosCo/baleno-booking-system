@@ -891,7 +891,10 @@ class Baleno_Admin {
             }
 
             // Send confirmation email
-            Baleno_Booking_Email::send_user_confirmation($result['booking_id']);
+            Baleno_Booking_Email::send_booking_confirmation($result['booking_id']);
+
+            // Send admin notification
+            Baleno_Booking_Email::send_admin_notification($result['booking_id']);
 
             if ($status === 'approved') {
                 Baleno_Booking_Email::send_approval_email($result['booking_id']);
