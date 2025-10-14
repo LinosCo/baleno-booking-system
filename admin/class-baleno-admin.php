@@ -84,6 +84,16 @@ class Baleno_Admin {
             array($this, 'display_new_booking_page')
         );
 
+        // Submenu: Edit Booking (hidden - no menu item)
+        add_submenu_page(
+            null,  // Hidden from menu
+            'Modifica Prenotazione',
+            'Modifica Prenotazione',
+            'manage_baleno_bookings',
+            'baleno-edit-booking',
+            array($this, 'display_edit_booking_page')
+        );
+
         // Submenu: Calendar
         add_submenu_page(
             'baleno-bookings',
@@ -221,6 +231,7 @@ class Baleno_Admin {
                             <th>Persone</th>
                             <th>Importo</th>
                             <th>Stato</th>
+                            <th>Creata/Modificata</th>
                             <th>Azioni</th>
                         </tr>
                     </thead>
@@ -280,12 +291,26 @@ class Baleno_Admin {
                                     <td>
                                         <?php echo $this->get_status_badge($booking->booking_status); ?>
                                     </td>
+                                    <td>
+                                        <small>
+                                            <strong>Creata:</strong><br>
+                                            <?php echo date('d/m/Y H:i', strtotime($booking->created_at)); ?><br>
+                                            <?php if ($booking->updated_at && $booking->updated_at !== $booking->created_at): ?>
+                                                <strong style="color: #2B548E;">Modificata:</strong><br>
+                                                <?php echo date('d/m/Y H:i', strtotime($booking->updated_at)); ?>
+                                            <?php endif; ?>
+                                        </small>
+                                    </td>
                                     <td class="actions">
                                         <button class="button button-small btn-view-details"
                                                 data-booking-id="<?php echo esc_attr($booking->id); ?>">
                                             👁 Dettagli
                                         </button>
                                         <?php if ($booking->booking_status === 'pending'): ?>
+                                            <a href="<?php echo admin_url('admin.php?page=baleno-edit-booking&id=' . $booking->id); ?>"
+                                               class="button button-small" style="background: #2B548E; color: white;">
+                                                ✏️ Modifica
+                                            </a>
                                             <button class="button button-primary button-small btn-approve"
                                                     data-booking-id="<?php echo esc_attr($booking->id); ?>">
                                                 ✓ Approva
