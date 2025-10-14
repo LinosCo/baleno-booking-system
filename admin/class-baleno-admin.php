@@ -43,7 +43,8 @@ class Baleno_Admin {
 
         wp_localize_script($this->plugin_name, 'balenoAdmin', array(
             'ajaxurl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('baleno_admin_nonce')
+            'nonce' => wp_create_nonce('baleno_admin_nonce'),
+            'bookingsUrl' => admin_url('admin.php?page=baleno-bookings')
         ));
     }
 

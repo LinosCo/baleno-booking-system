@@ -391,7 +391,7 @@ jQuery(document).ready(function($) {
 
                     // Redirect to bookings list after 2 seconds
                     setTimeout(function() {
-                        window.location.href = balenoAdmin.ajaxurl.replace('admin-ajax.php', 'admin.php?page=baleno-bookings');
+                        window.location.href = balenoAdmin.bookingsUrl;
                     }, 2000);
                 } else {
                     $('#form-message')
@@ -497,7 +497,7 @@ jQuery(document).ready(function($) {
 
                     // Redirect to bookings list after 1 second
                     setTimeout(function() {
-                        window.location.href = balenoAdmin.ajaxurl.replace('admin-ajax.php', 'admin.php?page=baleno-bookings');
+                        window.location.href = balenoAdmin.bookingsUrl;
                     }, 1000);
                 } else {
                     $('#form-message')
