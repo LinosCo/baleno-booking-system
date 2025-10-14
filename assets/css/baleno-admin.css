@@ -135,6 +135,15 @@
     background: #ffebee;
 }
 
+.booking-row.has-conflict {
+    border-left: 4px solid #dc3545 !important;
+    background: #fff5f5 !important;
+}
+
+.booking-row.has-conflict td {
+    position: relative;
+}
+
 /* Status Badges */
 .status-badge {
     display: inline-block;

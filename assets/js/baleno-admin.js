@@ -12,7 +12,7 @@ jQuery(document).ready(function($) {
         }
 
         var $btn = $(this);
-        $btn.prop('disabled', true).text('Approvazione...');
+        $btn.prop('disabled', true).text('Verifica...');
 
         $.ajax({
             url: balenoAdmin.ajaxurl,
@@ -24,15 +24,20 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    alert(response.data.message);
+                    alert('✅ ' + response.data.message);
                     location.reload();
                 } else {
-                    alert('Errore: ' + response.data.message);
+                    var errorMessage = '❌ ' + response.data.message;
+                    if (response.data.conflict_details) {
+                        errorMessage += '\n\n' + response.data.conflict_details;
+                        errorMessage += '\n\nNon è possibile approvare questa prenotazione finché non risolvi il conflitto (rifiuta o elimina l\'altra prenotazione).';
+                    }
+                    alert(errorMessage);
                     $btn.prop('disabled', false).text('✓ Approva');
                 }
             },
             error: function() {
-                alert('Errore durante l\'approvazione della prenotazione');
+                alert('❌ Errore durante l\'approvazione della prenotazione');
                 $btn.prop('disabled', false).text('✓ Approva');
             }
         });

@@ -231,9 +231,26 @@ class Baleno_Admin {
                             </tr>
                         <?php else: ?>
                             <?php foreach ($bookings as $booking): ?>
-                                <tr class="booking-row status-<?php echo esc_attr($booking->booking_status); ?>">
+                                <?php
+                                    // Check for conflicts
+                                    $has_conflict = false;
+                                    if ($booking->booking_status === 'pending') {
+                                        $has_conflict = !Baleno_Booking_DB::check_availability(
+                                            $booking->space_id,
+                                            $booking->booking_date,
+                                            $booking->start_time,
+                                            $booking->end_time,
+                                            $booking->id
+                                        );
+                                    }
+                                    $conflict_class = $has_conflict ? 'has-conflict' : '';
+                                ?>
+                                <tr class="booking-row status-<?php echo esc_attr($booking->booking_status); ?> <?php echo $conflict_class; ?>">
                                     <td>
                                         <strong><?php echo esc_html($booking->booking_code); ?></strong>
+                                        <?php if ($has_conflict): ?>
+                                            <br><small style="color: #dc3545; font-weight: bold;">⚠️ CONFLITTO</small>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <strong><?php echo esc_html($booking->full_name); ?></strong><br>
@@ -547,6 +564,47 @@ class Baleno_Admin {
 
         $booking_id = intval($_POST['booking_id']);
 
+        // Get booking details
+        $booking = Baleno_Booking_DB::get_booking($booking_id);
+
+        if (!$booking) {
+            wp_send_json_error(array('message' => 'Prenotazione non trovata'));
+            return;
+        }
+
+        // Check for conflicts before approving
+        $is_available = Baleno_Booking_DB::check_availability(
+            $booking->space_id,
+            $booking->booking_date,
+            $booking->start_time,
+            $booking->end_time,
+            $booking_id  // Exclude this booking from the check
+        );
+
+        if (!$is_available) {
+            // Find conflicting booking
+            $conflicts = $this->find_conflicting_bookings($booking);
+            $conflict_details = '';
+
+            if (!empty($conflicts)) {
+                $conflict = $conflicts[0];
+                $conflict_details = sprintf(
+                    'Conflitto con prenotazione %s (%s) - %s alle %s',
+                    $conflict->booking_code,
+                    $conflict->full_name,
+                    date('d/m/Y', strtotime($conflict->booking_date)),
+                    $conflict->start_time . '-' . $conflict->end_time
+                );
+            }
+
+            wp_send_json_error(array(
+                'message' => '⚠️ CONFLITTO RILEVATO: Esiste già una prenotazione approvata per questa sala nello stesso orario.',
+                'conflict_details' => $conflict_details
+            ));
+            return;
+        }
+
+        // No conflicts, proceed with approval
         $result = Baleno_Booking_DB::update_booking_status($booking_id, 'approved', get_current_user_id());
 
         if ($result !== false) {
@@ -555,6 +613,39 @@ class Baleno_Admin {
         } else {
             wp_send_json_error(array('message' => 'Errore durante l\'approvazione'));
         }
+    }
+
+    /**
+     * Find conflicting bookings for a given booking
+     */
+    private function find_conflicting_bookings($booking) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'baleno_bookings';
+
+        $sql = $wpdb->prepare(
+            "SELECT * FROM $table
+            WHERE space_id = %d
+            AND booking_date = %s
+            AND booking_status IN ('pending', 'approved')
+            AND id != %d
+            AND (
+                (start_time < %s AND end_time > %s) OR
+                (start_time < %s AND end_time > %s) OR
+                (start_time >= %s AND end_time <= %s)
+            )
+            ORDER BY start_time ASC",
+            $booking->space_id,
+            $booking->booking_date,
+            $booking->id,
+            $booking->end_time,
+            $booking->start_time,
+            $booking->end_time,
+            $booking->end_time,
+            $booking->start_time,
+            $booking->end_time
+        );
+
+        return $wpdb->get_results($sql);
     }
 
     /**
@@ -890,12 +981,29 @@ class Baleno_Admin {
             'total_price' => floatval($_POST['total_price'])
         );
 
+        // Check for conflicts if status is approved
+        $status = sanitize_text_field($_POST['booking_status']);
+        if ($status === 'approved') {
+            $is_available = Baleno_Booking_DB::check_availability(
+                $booking_data['space_id'],
+                $booking_data['booking_date'],
+                $booking_data['start_time'],
+                $booking_data['end_time']
+            );
+
+            if (!$is_available) {
+                wp_send_json_error(array(
+                    'message' => '⚠️ CONFLITTO: Esiste già una prenotazione per questa sala nello stesso orario. Scegli un altro orario o crea la prenotazione con stato "In Attesa".'
+                ));
+                return;
+            }
+        }
+
         // Create booking
         $result = Baleno_Booking_DB::create_booking($booking_data);
 
         if ($result['success']) {
             // Update status if not pending
-            $status = sanitize_text_field($_POST['booking_status']);
             if ($status !== 'pending') {
                 Baleno_Booking_DB::update_booking_status($result['booking_id'], $status, get_current_user_id());
             }
