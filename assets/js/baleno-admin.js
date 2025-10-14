@@ -444,4 +444,67 @@ jQuery(document).ready(function($) {
             }
         }
     });
+
+    // ========== EDIT BOOKING FORM ==========
+
+    // Submit edit booking form
+    $('#edit-booking-form').on('submit', function(e) {
+        e.preventDefault();
+
+        // Validate form
+        if (!this.checkValidity()) {
+            this.reportValidity();
+            return;
+        }
+
+        // Check total price
+        if (parseFloat($('#total_price').val()) <= 0) {
+            alert('Seleziona una sala e una fascia oraria prima di procedere');
+            return;
+        }
+
+        var $btn = $(this).find('button[type="submit"]');
+        var originalText = $btn.html();
+        $btn.prop('disabled', true).html('⏳ Aggiornamento in corso...');
+
+        // Prepare form data
+        var formData = $(this).serializeArray();
+        formData.push({ name: 'action', value: 'baleno_update_booking' });
+        formData.push({ name: 'nonce', value: balenoAdmin.nonce });
+
+        $.ajax({
+            url: balenoAdmin.ajaxurl,
+            type: 'POST',
+            data: $.param(formData),
+            success: function(response) {
+                if (response.success) {
+                    $('#form-message')
+                        .removeClass('error')
+                        .addClass('success')
+                        .html('✅ ' + response.data.message)
+                        .fadeIn();
+
+                    // Redirect to bookings list after 1 second
+                    setTimeout(function() {
+                        window.location.href = balenoAdmin.ajaxurl.replace('admin-ajax.php', 'admin.php?page=baleno-bookings');
+                    }, 1000);
+                } else {
+                    $('#form-message')
+                        .removeClass('success')
+                        .addClass('error')
+                        .html('❌ ' + response.data.message)
+                        .fadeIn();
+                    $btn.prop('disabled', false).html(originalText);
+                }
+            },
+            error: function() {
+                $('#form-message')
+                    .removeClass('success')
+                    .addClass('error')
+                    .html('❌ Errore durante l\'aggiornamento della prenotazione')
+                    .fadeIn();
+                $btn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
 });

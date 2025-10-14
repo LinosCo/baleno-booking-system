@@ -97,6 +97,56 @@ class Baleno_Booking_DB {
     }
 
     /**
+     * Update an existing booking
+     */
+    public static function update_booking($booking_id, $data) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'baleno_bookings';
+
+        $booking_data = array(
+            'full_name' => sanitize_text_field($data['full_name']),
+            'codice_fiscale' => strtoupper(sanitize_text_field($data['codice_fiscale'])),
+            'email' => sanitize_email($data['email']),
+            'phone' => sanitize_text_field($data['phone']),
+            'address' => sanitize_text_field($data['address']),
+            'city' => sanitize_text_field($data['city']),
+            'cap' => sanitize_text_field($data['cap']),
+            'organization_name' => sanitize_text_field($data['organization_name']),
+            'organization_address' => sanitize_text_field($data['organization_address']),
+            'organization_piva' => sanitize_text_field($data['organization_piva']),
+            'space_id' => intval($data['space_id']),
+            'external_space' => isset($data['external_space']) ? 1 : 0,
+            'booking_date' => sanitize_text_field($data['booking_date']),
+            'start_time' => sanitize_text_field($data['start_time']),
+            'end_time' => sanitize_text_field($data['end_time']),
+            'time_slot' => sanitize_text_field($data['time_slot']),
+            'num_people' => intval($data['num_people']),
+            'event_type' => sanitize_text_field($data['event_type']),
+            'event_description' => sanitize_textarea_field($data['event_description']),
+            'special_notes' => sanitize_textarea_field($data['special_notes']),
+            'equipment_ids' => isset($data['equipment_ids']) ? json_encode($data['equipment_ids']) : null,
+            'total_price' => floatval($data['total_price'])
+        );
+
+        $result = $wpdb->update(
+            $table,
+            $booking_data,
+            array('id' => $booking_id),
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%f'),
+            array('%d')
+        );
+
+        if ($result !== false) {
+            return array(
+                'success' => true,
+                'booking_id' => $booking_id
+            );
+        }
+
+        return array('success' => false, 'error' => $wpdb->last_error);
+    }
+
+    /**
      * Update booking status
      */
     public static function update_booking_status($booking_id, $status, $user_id = null, $reason = null) {

@@ -970,6 +970,263 @@ class Baleno_Admin {
     }
 
     /**
+     * Display edit booking page
+     */
+    public function display_edit_booking_page() {
+        // Get booking ID from URL
+        $booking_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+        if (!$booking_id) {
+            echo '<div class="wrap"><h1>Errore</h1><p>ID prenotazione non valido.</p></div>';
+            return;
+        }
+
+        // Get booking data
+        $booking = Baleno_Booking_DB::get_booking($booking_id);
+
+        if (!$booking) {
+            echo '<div class="wrap"><h1>Errore</h1><p>Prenotazione non trovata.</p></div>';
+            return;
+        }
+
+        // Only allow editing pending bookings
+        if ($booking->booking_status !== 'pending') {
+            echo '<div class="wrap"><h1>Errore</h1><p>Solo le prenotazioni in attesa possono essere modificate.</p></div>';
+            return;
+        }
+
+        // Get spaces and equipment
+        $spaces = Baleno_Booking_DB::get_spaces();
+        $equipment = Baleno_Booking_DB::get_equipment();
+
+        // Get current booking equipment (decode JSON)
+        $current_equipment_ids = !empty($booking->equipment_ids) ? json_decode($booking->equipment_ids, true) : array();
+        ?>
+        <div class="wrap baleno-admin-page">
+            <h1>Modifica Prenotazione <?php echo esc_html($booking->booking_code); ?></h1>
+            <p class="description">Modifica i dettagli della prenotazione. Le prenotazioni in attesa possono essere modificate anche in caso di conflitti.</p>
+
+            <?php
+            // Check for conflicts
+            $has_conflict = !Baleno_Booking_DB::check_availability(
+                $booking->space_id,
+                $booking->booking_date,
+                $booking->start_time,
+                $booking->end_time,
+                $booking->id
+            );
+
+            if ($has_conflict): ?>
+                <div class="notice notice-warning">
+                    <p><strong>⚠️ ATTENZIONE:</strong> Questa prenotazione è in conflitto con altre prenotazioni. Puoi comunque modificarla, ma non potrà essere approvata finché non risolvi il conflitto.</p>
+                </div>
+            <?php endif; ?>
+
+            <form id="edit-booking-form" class="baleno-manual-booking-form">
+                <?php wp_nonce_field('baleno_admin_nonce', 'nonce'); ?>
+                <input type="hidden" name="booking_id" value="<?php echo esc_attr($booking_id); ?>">
+
+                <!-- Dati Personali -->
+                <div class="form-section">
+                    <h2>📋 Dati Personali</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="full_name">Nome Completo *</label>
+                            <input type="text" id="full_name" name="full_name" value="<?php echo esc_attr($booking->full_name); ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="codice_fiscale">Codice Fiscale *</label>
+                            <input type="text" id="codice_fiscale" name="codice_fiscale" maxlength="16" value="<?php echo esc_attr($booking->codice_fiscale); ?>" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email *</label>
+                            <input type="email" id="email" name="email" value="<?php echo esc_attr($booking->email); ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Telefono *</label>
+                            <input type="tel" id="phone" name="phone" value="<?php echo esc_attr($booking->phone); ?>" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="address">Indirizzo *</label>
+                            <input type="text" id="address" name="address" value="<?php echo esc_attr($booking->address); ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="city">Città *</label>
+                            <input type="text" id="city" name="city" value="<?php echo esc_attr($booking->city); ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cap">CAP *</label>
+                            <input type="text" id="cap" name="cap" maxlength="5" value="<?php echo esc_attr($booking->cap); ?>" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dati Organizzazione (Opzionale) -->
+                <div class="form-section">
+                    <h2>🏢 Dati Organizzazione (Opzionale)</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="organization_name">Nome Organizzazione</label>
+                            <input type="text" id="organization_name" name="organization_name" value="<?php echo esc_attr($booking->organization_name); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="organization_piva">P.IVA</label>
+                            <input type="text" id="organization_piva" name="organization_piva" maxlength="11" value="<?php echo esc_attr($booking->organization_piva); ?>">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="organization_address">Indirizzo Organizzazione</label>
+                        <input type="text" id="organization_address" name="organization_address" value="<?php echo esc_attr($booking->organization_address); ?>">
+                    </div>
+                </div>
+
+                <!-- Dettagli Prenotazione -->
+                <div class="form-section">
+                    <h2>🏠 Dettagli Prenotazione</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="space_id">Sala *</label>
+                            <select id="space_id" name="space_id" required>
+                                <option value="">Seleziona una sala</option>
+                                <?php foreach ($spaces as $space): ?>
+                                    <option value="<?php echo esc_attr($space->id); ?>"
+                                            data-price-1h="<?php echo esc_attr($space->price_1h); ?>"
+                                            data-price-2h="<?php echo esc_attr($space->price_2h); ?>"
+                                            data-price-half="<?php echo esc_attr($space->price_half_day); ?>"
+                                            data-price-full="<?php echo esc_attr($space->price_full_day); ?>"
+                                            <?php selected($booking->space_id, $space->id); ?>>
+                                        <?php echo esc_html($space->space_code . ' - ' . $space->space_name); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="booking_date">Data *</label>
+                            <input type="date" id="booking_date" name="booking_date" value="<?php echo esc_attr($booking->booking_date); ?>" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="time_slot">Fascia Oraria *</label>
+                            <select id="time_slot" name="time_slot" required>
+                                <option value="">Seleziona fascia oraria</option>
+                                <option value="1h" <?php selected($booking->time_slot, '1h'); ?>>1 ora</option>
+                                <option value="2h" <?php selected($booking->time_slot, '2h'); ?>>2 ore</option>
+                                <option value="half_day" <?php selected($booking->time_slot, 'half_day'); ?>>Mezza giornata (4 ore)</option>
+                                <option value="full_day" <?php selected($booking->time_slot, 'full_day'); ?>>Giornata intera (8 ore)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="start_time">Ora Inizio *</label>
+                            <input type="time" id="start_time" name="start_time" value="<?php echo esc_attr($booking->start_time); ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="end_time">Ora Fine *</label>
+                            <input type="time" id="end_time" name="end_time" value="<?php echo esc_attr($booking->end_time); ?>" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="num_people">Numero Partecipanti *</label>
+                            <input type="number" id="num_people" name="num_people" min="1" value="<?php echo esc_attr($booking->num_people); ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="event_type">Tipo Evento *</label>
+                            <select id="event_type" name="event_type" required>
+                                <option value="">Seleziona tipo</option>
+                                <option value="meeting" <?php selected($booking->event_type, 'meeting'); ?>>Riunione</option>
+                                <option value="workshop" <?php selected($booking->event_type, 'workshop'); ?>>Workshop/Corso</option>
+                                <option value="conference" <?php selected($booking->event_type, 'conference'); ?>>Conferenza</option>
+                                <option value="cultural" <?php selected($booking->event_type, 'cultural'); ?>>Evento Culturale</option>
+                                <option value="social" <?php selected($booking->event_type, 'social'); ?>>Evento Sociale</option>
+                                <option value="other" <?php selected($booking->event_type, 'other'); ?>>Altro</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="event_description">Descrizione Evento *</label>
+                        <textarea id="event_description" name="event_description" rows="3" required><?php echo esc_textarea($booking->event_description); ?></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="external_space" name="external_space" value="1" <?php checked($booking->external_space, 1); ?>>
+                            Richiesta utilizzo spazi esterni
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Attrezzature -->
+                <div class="form-section">
+                    <h2>🎥 Attrezzature Aggiuntive</h2>
+                    <div class="equipment-list">
+                        <?php foreach ($equipment as $item): ?>
+                            <label class="equipment-item">
+                                <input type="checkbox" name="equipment_ids[]" value="<?php echo esc_attr($item->id); ?>"
+                                       data-price="<?php echo esc_attr($item->price); ?>"
+                                       <?php checked(in_array($item->id, $current_equipment_ids)); ?>>
+                                <span class="equipment-name"><?php echo esc_html($item->equipment_name); ?></span>
+                                <span class="equipment-price">€ <?php echo number_format($item->price, 2, ',', '.'); ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- Note Speciali -->
+                <div class="form-section">
+                    <h2>📝 Note Speciali</h2>
+                    <div class="form-group">
+                        <textarea id="special_notes" name="special_notes" rows="4" placeholder="Inserisci eventuali note o richieste speciali..."><?php echo esc_textarea($booking->special_notes); ?></textarea>
+                    </div>
+                </div>
+
+                <!-- Riepilogo Costi -->
+                <div class="form-section">
+                    <h2>💰 Riepilogo Costi</h2>
+                    <div class="price-summary">
+                        <div class="price-row">
+                            <span>Costo Sala:</span>
+                            <span id="space-price">€ 0,00</span>
+                        </div>
+                        <div class="price-row">
+                            <span>Attrezzature:</span>
+                            <span id="equipment-price">€ 0,00</span>
+                        </div>
+                        <div class="price-row total">
+                            <span><strong>Totale:</strong></span>
+                            <span id="total-price"><strong>€ 0,00</strong></span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="total_price" name="total_price" value="<?php echo esc_attr($booking->total_price); ?>">
+                </div>
+
+                <!-- Submit -->
+                <div class="form-actions">
+                    <button type="submit" class="button button-primary button-large">
+                        💾 Aggiorna Prenotazione
+                    </button>
+                    <a href="<?php echo admin_url('admin.php?page=baleno-bookings'); ?>" class="button button-large">
+                        Annulla
+                    </a>
+                </div>
+
+                <div id="form-message" class="form-message" style="display: none;"></div>
+            </form>
+        </div>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Calculate initial price
+            calculateTotalPrice();
+        });
+        </script>
+        <?php
+    }
+
+    /**
      * AJAX: Create manual booking
      */
     public function create_manual_booking() {
@@ -1050,6 +1307,70 @@ class Baleno_Admin {
             ));
         } else {
             wp_send_json_error(array('message' => 'Errore durante la creazione della prenotazione: ' . $result['error']));
+        }
+    }
+
+    /**
+     * AJAX: Update booking
+     */
+    public function update_booking() {
+        check_ajax_referer('baleno_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_baleno_bookings')) {
+            wp_send_json_error(array('message' => 'Permesso negato'));
+            return;
+        }
+
+        $booking_id = intval($_POST['booking_id']);
+
+        // Verify booking exists and is pending
+        $booking = Baleno_Booking_DB::get_booking($booking_id);
+        if (!$booking) {
+            wp_send_json_error(array('message' => 'Prenotazione non trovata'));
+            return;
+        }
+
+        if ($booking->booking_status !== 'pending') {
+            wp_send_json_error(array('message' => 'Solo le prenotazioni in attesa possono essere modificate'));
+            return;
+        }
+
+        // Prepare booking data
+        $booking_data = array(
+            'full_name' => sanitize_text_field($_POST['full_name']),
+            'codice_fiscale' => strtoupper(sanitize_text_field($_POST['codice_fiscale'])),
+            'email' => sanitize_email($_POST['email']),
+            'phone' => sanitize_text_field($_POST['phone']),
+            'address' => sanitize_text_field($_POST['address']),
+            'city' => sanitize_text_field($_POST['city']),
+            'cap' => sanitize_text_field($_POST['cap']),
+            'organization_name' => sanitize_text_field($_POST['organization_name']),
+            'organization_address' => sanitize_text_field($_POST['organization_address']),
+            'organization_piva' => sanitize_text_field($_POST['organization_piva']),
+            'space_id' => intval($_POST['space_id']),
+            'external_space' => isset($_POST['external_space']) ? 1 : 0,
+            'booking_date' => sanitize_text_field($_POST['booking_date']),
+            'start_time' => sanitize_text_field($_POST['start_time']),
+            'end_time' => sanitize_text_field($_POST['end_time']),
+            'time_slot' => sanitize_text_field($_POST['time_slot']),
+            'num_people' => intval($_POST['num_people']),
+            'event_type' => sanitize_text_field($_POST['event_type']),
+            'event_description' => sanitize_textarea_field($_POST['event_description']),
+            'special_notes' => sanitize_textarea_field($_POST['special_notes']),
+            'equipment_ids' => isset($_POST['equipment_ids']) ? array_map('intval', $_POST['equipment_ids']) : array(),
+            'total_price' => floatval($_POST['total_price'])
+        );
+
+        // Update booking (no conflict check needed for pending bookings)
+        $result = Baleno_Booking_DB::update_booking($booking_id, $booking_data);
+
+        if ($result['success']) {
+            wp_send_json_success(array(
+                'message' => 'Prenotazione aggiornata con successo!',
+                'booking_id' => $booking_id
+            ));
+        } else {
+            wp_send_json_error(array('message' => 'Errore durante l\'aggiornamento della prenotazione: ' . $result['error']));
         }
     }
 }
