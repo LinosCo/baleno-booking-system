@@ -1216,13 +1216,6 @@ class Baleno_Admin {
                 <div id="form-message" class="form-message" style="display: none;"></div>
             </form>
         </div>
-
-        <script>
-        jQuery(document).ready(function($) {
-            // Calculate initial price
-            calculateTotalPrice();
-        });
-        </script>
         <?php
     }
 

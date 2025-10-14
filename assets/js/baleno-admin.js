@@ -447,9 +447,17 @@ jQuery(document).ready(function($) {
 
     // ========== EDIT BOOKING FORM ==========
 
+    // Initialize price calculation for edit form
+    if ($('#edit-booking-form').length) {
+        console.log('Edit booking form detected, initializing...');
+        // Trigger price calculation on page load
+        calculateTotalPrice();
+    }
+
     // Submit edit booking form
-    $('#edit-booking-form').on('submit', function(e) {
+    $(document).on('submit', '#edit-booking-form', function(e) {
         e.preventDefault();
+        console.log('Edit booking form submitted');
 
         // Validate form
         if (!this.checkValidity()) {
@@ -472,11 +480,14 @@ jQuery(document).ready(function($) {
         formData.push({ name: 'action', value: 'baleno_update_booking' });
         formData.push({ name: 'nonce', value: balenoAdmin.nonce });
 
+        console.log('Sending AJAX request to update booking...');
+
         $.ajax({
             url: balenoAdmin.ajaxurl,
             type: 'POST',
             data: $.param(formData),
             success: function(response) {
+                console.log('AJAX response:', response);
                 if (response.success) {
                     $('#form-message')
                         .removeClass('error')
@@ -497,7 +508,8 @@ jQuery(document).ready(function($) {
                     $btn.prop('disabled', false).html(originalText);
                 }
             },
-            error: function() {
+            error: function(xhr, status, error) {
+                console.error('AJAX error:', status, error);
                 $('#form-message')
                     .removeClass('success')
                     .addClass('error')
