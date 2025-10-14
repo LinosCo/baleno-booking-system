@@ -13,6 +13,12 @@ class Baleno_Admin {
     }
 
     public function enqueue_styles() {
+        // Only load on Baleno pages
+        $screen = get_current_screen();
+        if (!$screen || strpos($screen->id, 'baleno') === false) {
+            return;
+        }
+
         wp_enqueue_style(
             $this->plugin_name,
             BALENO_BOOKING_PLUGIN_URL . 'assets/css/baleno-admin.css',
@@ -23,12 +29,18 @@ class Baleno_Admin {
     }
 
     public function enqueue_scripts() {
+        // Only load on Baleno pages
+        $screen = get_current_screen();
+        if (!$screen || strpos($screen->id, 'baleno') === false) {
+            return;
+        }
+
         wp_enqueue_script(
             $this->plugin_name,
             BALENO_BOOKING_PLUGIN_URL . 'assets/js/baleno-admin.js',
             array('jquery'),
             $this->version,
-            false
+            true
         );
 
         wp_localize_script($this->plugin_name, 'balenoAdmin', array(

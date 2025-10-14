@@ -1,6 +1,8 @@
 jQuery(document).ready(function($) {
     'use strict';
 
+    console.log('Baleno Admin JS loaded', balenoAdmin);
+
     // Approve booking
     $('.btn-approve').on('click', function() {
         var bookingId = $(this).data('booking-id');
