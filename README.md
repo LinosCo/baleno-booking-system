@@ -262,7 +262,7 @@ Per supporto, contatta:
 - **Richiede WordPress**: 5.0 o superiore
 - **Richiede PHP**: 7.0 o superiore
 - **Licenza**: GPL-2.0+
-- **Autore**: Alessandro Borsato
+- **Autore**: Nicola Zago
 
 ## Changelog
 

@@ -13,6 +13,14 @@ class Baleno_Activator {
         add_option('baleno_booking_email_admin', get_option('admin_email'));
         add_option('baleno_booking_caution_amount', 50);
         add_option('baleno_booking_auto_approve', 0);
+        add_option('baleno_booking_plugin_details', array(
+            'name' => 'Baleno Booking System',
+            'description' => 'Sistema completo di gestione prenotazioni per la Casa di Quartiere Baleno - San Zeno, Verona',
+            'version' => BALENO_BOOKING_VERSION,
+            'author' => 'Nicola Zago',
+            'author_uri' => 'https://balenosanzeno.it',
+            'plugin_uri' => 'https://balenosanzeno.it'
+        ));
 
         // Flush rewrite rules
         flush_rewrite_rules();

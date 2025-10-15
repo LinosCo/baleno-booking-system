@@ -4,7 +4,7 @@
  * Plugin URI: https://balenosanzeno.it
  * Description: Sistema completo di gestione prenotazioni per la Casa di Quartiere Baleno - San Zeno, Verona
  * Version: 1.0.0
- * Author: Alessandro Borsato
+ * Author: Nicola Zago
  * Author URI: https://balenosanzeno.it
  * License: GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
@@ -21,6 +21,7 @@ if (!defined('WPINC')) {
 define('BALENO_BOOKING_VERSION', '1.0.0');
 define('BALENO_BOOKING_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('BALENO_BOOKING_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('BALENO_BOOKING_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
 /**
  * The code that runs during plugin activation.

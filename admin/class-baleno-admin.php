@@ -13,6 +13,57 @@ class Baleno_Admin {
     }
 
     /**
+     * Allow administrators to customize the plugin information shown in the plugins list
+     */
+    public function filter_plugin_details($plugins) {
+        if (!is_array($plugins)) {
+            return $plugins;
+        }
+
+        $plugin_file = BALENO_BOOKING_PLUGIN_BASENAME;
+
+        if (!isset($plugins[$plugin_file])) {
+            return $plugins;
+        }
+
+        $details = get_option('baleno_booking_plugin_details', array());
+
+        if (!empty($details['name'])) {
+            $plugins[$plugin_file]['Name'] = $details['name'];
+        }
+
+        if (!empty($details['description'])) {
+            $plugins[$plugin_file]['Description'] = $details['description'];
+        }
+
+        if (!empty($details['version'])) {
+            $plugins[$plugin_file]['Version'] = $details['version'];
+        }
+
+        if (!empty($details['author'])) {
+            $plugins[$plugin_file]['AuthorName'] = $details['author'];
+
+            if (!empty($details['author_uri'])) {
+                $plugins[$plugin_file]['Author'] = sprintf(
+                    '<a href="%s">%s</a>',
+                    esc_url($details['author_uri']),
+                    esc_html($details['author'])
+                );
+                $plugins[$plugin_file]['AuthorURI'] = $details['author_uri'];
+            } else {
+                $plugins[$plugin_file]['Author'] = esc_html($details['author']);
+                $plugins[$plugin_file]['AuthorURI'] = '';
+            }
+        }
+
+        if (!empty($details['plugin_uri'])) {
+            $plugins[$plugin_file]['PluginURI'] = $details['plugin_uri'];
+        }
+
+        return $plugins;
+    }
+
+    /**
      * Normalize price input allowing comma as decimal separator
      */
     private function normalize_price_input($price) {
@@ -736,6 +787,102 @@ class Baleno_Admin {
         register_setting('baleno_booking_settings', 'baleno_booking_email_admin');
         register_setting('baleno_booking_settings', 'baleno_booking_caution_amount');
         register_setting('baleno_booking_settings', 'baleno_booking_auto_approve');
+        register_setting(
+            'baleno_booking_settings',
+            'baleno_booking_plugin_details',
+            array('sanitize_callback' => array($this, 'sanitize_plugin_details'))
+        );
+
+        add_settings_section(
+            'baleno_plugin_details',
+            'Dettagli Plugin',
+            array($this, 'plugin_details_section_info'),
+            'baleno-settings'
+        );
+
+        add_settings_field(
+            'baleno_booking_plugin_details_name',
+            'Nome Plugin',
+            array($this, 'plugin_details_field'),
+            'baleno-settings',
+            'baleno_plugin_details',
+            array(
+                'label_for' => 'baleno_booking_plugin_details_name',
+                'key' => 'name',
+                'type' => 'text',
+                'description' => 'Testo mostrato come nome del plugin nella lista dei plugin.'
+            )
+        );
+
+        add_settings_field(
+            'baleno_booking_plugin_details_description',
+            'Descrizione',
+            array($this, 'plugin_details_field'),
+            'baleno-settings',
+            'baleno_plugin_details',
+            array(
+                'label_for' => 'baleno_booking_plugin_details_description',
+                'key' => 'description',
+                'type' => 'textarea',
+                'description' => 'Descrizione mostrata nella lista dei plugin.'
+            )
+        );
+
+        add_settings_field(
+            'baleno_booking_plugin_details_version',
+            'Versione',
+            array($this, 'plugin_details_field'),
+            'baleno-settings',
+            'baleno_plugin_details',
+            array(
+                'label_for' => 'baleno_booking_plugin_details_version',
+                'key' => 'version',
+                'type' => 'text',
+                'description' => 'Numero di versione mostrato nella lista dei plugin.'
+            )
+        );
+
+        add_settings_field(
+            'baleno_booking_plugin_details_author',
+            'Autore',
+            array($this, 'plugin_details_field'),
+            'baleno-settings',
+            'baleno_plugin_details',
+            array(
+                'label_for' => 'baleno_booking_plugin_details_author',
+                'key' => 'author',
+                'type' => 'text',
+                'description' => 'Nome dell\'autore mostrato nella lista dei plugin.'
+            )
+        );
+
+        add_settings_field(
+            'baleno_booking_plugin_details_author_uri',
+            'Sito Autore',
+            array($this, 'plugin_details_field'),
+            'baleno-settings',
+            'baleno_plugin_details',
+            array(
+                'label_for' => 'baleno_booking_plugin_details_author_uri',
+                'key' => 'author_uri',
+                'type' => 'url',
+                'description' => 'URL del sito dell\'autore.'
+            )
+        );
+
+        add_settings_field(
+            'baleno_booking_plugin_details_plugin_uri',
+            'Sito Plugin',
+            array($this, 'plugin_details_field'),
+            'baleno-settings',
+            'baleno_plugin_details',
+            array(
+                'label_for' => 'baleno_booking_plugin_details_plugin_uri',
+                'key' => 'plugin_uri',
+                'type' => 'url',
+                'description' => 'URL della pagina del plugin.'
+            )
+        );
 
         add_settings_section(
             'baleno_general_settings',
@@ -785,6 +932,79 @@ class Baleno_Admin {
         $value = get_option('baleno_booking_auto_approve', 0);
         echo '<input type="checkbox" name="baleno_booking_auto_approve" value="1" ' . checked(1, $value, false) . '>';
         echo '<p class="description">Se attivata, le prenotazioni saranno approvate automaticamente</p>';
+    }
+
+    public function plugin_details_section_info() {
+        echo '<p>Personalizza le informazioni del plugin visualizzate nella schermata Plugin di WordPress.</p>';
+    }
+
+    public function plugin_details_field($args) {
+        $details = get_option('baleno_booking_plugin_details', array());
+        $defaults = array(
+            'name' => '',
+            'description' => '',
+            'version' => '',
+            'author' => '',
+            'author_uri' => '',
+            'plugin_uri' => ''
+        );
+        $details = wp_parse_args($details, $defaults);
+
+        $key = isset($args['key']) ? $args['key'] : '';
+        $type = isset($args['type']) ? $args['type'] : 'text';
+        $id = isset($args['label_for']) ? $args['label_for'] : '';
+        $description = isset($args['description']) ? $args['description'] : '';
+
+        if ($type === 'textarea') {
+            printf(
+                '<textarea id="%1$s" name="baleno_booking_plugin_details[%2$s]" rows="3" class="large-text">%3$s</textarea>',
+                esc_attr($id),
+                esc_attr($key),
+                esc_textarea($details[$key])
+            );
+        } else {
+            printf(
+                '<input type="%4$s" id="%1$s" name="baleno_booking_plugin_details[%2$s]" value="%3$s" class="regular-text">',
+                esc_attr($id),
+                esc_attr($key),
+                esc_attr($details[$key]),
+                esc_attr($type)
+            );
+        }
+
+        if (!empty($description)) {
+            printf('<p class="description">%s</p>', esc_html($description));
+        }
+    }
+
+    public function sanitize_plugin_details($input) {
+        $output = array();
+
+        if (isset($input['name'])) {
+            $output['name'] = sanitize_text_field($input['name']);
+        }
+
+        if (isset($input['description'])) {
+            $output['description'] = sanitize_textarea_field($input['description']);
+        }
+
+        if (isset($input['version'])) {
+            $output['version'] = sanitize_text_field($input['version']);
+        }
+
+        if (isset($input['author'])) {
+            $output['author'] = sanitize_text_field($input['author']);
+        }
+
+        if (isset($input['author_uri'])) {
+            $output['author_uri'] = esc_url_raw($input['author_uri']);
+        }
+
+        if (isset($input['plugin_uri'])) {
+            $output['plugin_uri'] = esc_url_raw($input['plugin_uri']);
+        }
+
+        return $output;
     }
 
     /**
