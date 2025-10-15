@@ -34,6 +34,7 @@ class Baleno_Booking {
         $this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts');
         $this->loader->add_action('admin_menu', $plugin_admin, 'add_plugin_admin_menu');
         $this->loader->add_action('admin_init', $plugin_admin, 'register_settings');
+        $this->loader->add_filter('all_plugins', $plugin_admin, 'filter_plugin_details');
 
         // Equipment management actions
         $this->loader->add_action('admin_post_baleno_add_equipment', $plugin_admin, 'handle_add_equipment');
