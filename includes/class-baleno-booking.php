@@ -35,6 +35,12 @@ class Baleno_Booking {
         $this->loader->add_action('admin_menu', $plugin_admin, 'add_plugin_admin_menu');
         $this->loader->add_action('admin_init', $plugin_admin, 'register_settings');
 
+        // Equipment management actions
+        $this->loader->add_action('admin_post_baleno_add_equipment', $plugin_admin, 'handle_add_equipment');
+        $this->loader->add_action('admin_post_baleno_update_equipment', $plugin_admin, 'handle_update_equipment');
+        $this->loader->add_action('admin_post_baleno_delete_equipment', $plugin_admin, 'handle_delete_equipment');
+        $this->loader->add_action('admin_post_baleno_toggle_equipment', $plugin_admin, 'handle_toggle_equipment');
+
         // AJAX actions
         $this->loader->add_action('wp_ajax_baleno_approve_booking', $plugin_admin, 'approve_booking');
         $this->loader->add_action('wp_ajax_baleno_reject_booking', $plugin_admin, 'reject_booking');
