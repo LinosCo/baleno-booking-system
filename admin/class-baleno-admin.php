@@ -12,6 +12,27 @@ class Baleno_Admin {
         $this->version = $version;
     }
 
+    /**
+     * Normalize price input allowing comma as decimal separator
+     */
+    private function normalize_price_input($price) {
+        if (is_string($price)) {
+            $price = str_replace(array('€', ' '), '', $price);
+            $price = str_replace(',', '.', $price);
+        }
+
+        return floatval($price);
+    }
+
+    /**
+     * Redirect helper for equipment management
+     */
+    private function redirect_to_equipment_page($args = array()) {
+        $url = add_query_arg(array_merge(array('page' => 'baleno-equipment'), $args), admin_url('admin.php'));
+        wp_safe_redirect($url);
+        exit;
+    }
+
     public function enqueue_styles($hook) {
         // Only load on Baleno pages
         if (strpos($hook, 'baleno') === false) {
@@ -456,9 +477,84 @@ class Baleno_Admin {
      */
     public function display_equipment_page() {
         $equipment = Baleno_Booking_DB::get_equipment(false);
+        $edit_id = isset($_GET['edit']) ? intval($_GET['edit']) : 0;
+        $equipment_to_edit = $edit_id ? Baleno_Booking_DB::get_equipment_by_id($edit_id) : null;
         ?>
         <div class="wrap baleno-admin-page">
             <h1>Gestione Attrezzature</h1>
+
+            <?php if (isset($_GET['baleno_message'])): ?>
+                <div class="notice notice-success is-dismissible">
+                    <p><?php echo esc_html(sanitize_text_field(wp_unslash($_GET['baleno_message']))); ?></p>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($_GET['baleno_error'])): ?>
+                <div class="notice notice-error">
+                    <p><?php echo esc_html(sanitize_text_field(wp_unslash($_GET['baleno_error']))); ?></p>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($edit_id && !$equipment_to_edit): ?>
+                <div class="notice notice-error">
+                    <p>L'attrezzatura selezionata non esiste.</p>
+                </div>
+            <?php endif; ?>
+
+            <div class="baleno-equipment-form">
+                <h2><?php echo $equipment_to_edit ? 'Modifica Attrezzatura' : 'Aggiungi Nuova Attrezzatura'; ?></h2>
+
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                    <?php if ($equipment_to_edit): ?>
+                        <input type="hidden" name="action" value="baleno_update_equipment">
+                        <input type="hidden" name="equipment_id" value="<?php echo esc_attr($equipment_to_edit->id); ?>">
+                        <?php wp_nonce_field('baleno_update_equipment'); ?>
+                    <?php else: ?>
+                        <input type="hidden" name="action" value="baleno_add_equipment">
+                        <?php wp_nonce_field('baleno_add_equipment'); ?>
+                    <?php endif; ?>
+
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row"><label for="equipment_name">Nome</label></th>
+                            <td>
+                                <input type="text" name="equipment_name" id="equipment_name" class="regular-text" required value="<?php echo esc_attr($equipment_to_edit ? $equipment_to_edit->equipment_name : ''); ?>">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="equipment_description">Descrizione</label></th>
+                            <td>
+                                <textarea name="description" id="equipment_description" class="large-text" rows="3"><?php echo esc_textarea($equipment_to_edit ? $equipment_to_edit->description : ''); ?></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="equipment_price">Prezzo (€)</label></th>
+                            <td>
+                                <input type="text" name="price" id="equipment_price" class="regular-text" required value="<?php echo esc_attr($equipment_to_edit ? number_format($equipment_to_edit->price, 2, ',', '.') : ''); ?>">
+                                <p class="description">Inserisci il costo aggiuntivo da applicare alla prenotazione.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Stato</th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="is_active" value="1" <?php checked(!$equipment_to_edit || $equipment_to_edit->is_active); ?>>
+                                    Attiva
+                                </label>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <p class="submit">
+                        <button type="submit" class="button button-primary">
+                            <?php echo $equipment_to_edit ? 'Aggiorna Attrezzatura' : 'Aggiungi Attrezzatura'; ?>
+                        </button>
+                        <?php if ($equipment_to_edit): ?>
+                            <a href="<?php echo esc_url(admin_url('admin.php?page=baleno-equipment')); ?>" class="button">Annulla</a>
+                        <?php endif; ?>
+                    </p>
+                </form>
+            </div>
 
             <table class="wp-list-table widefat fixed striped">
                 <thead>
@@ -467,6 +563,7 @@ class Baleno_Admin {
                         <th>Descrizione</th>
                         <th>Prezzo</th>
                         <th>Stato</th>
+                        <th class="column-actions">Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -478,12 +575,139 @@ class Baleno_Admin {
                             <td>
                                 <?php echo $item->is_active ? '<span class="status-badge active">Attivo</span>' : '<span class="status-badge inactive">Non Attivo</span>'; ?>
                             </td>
+                            <td>
+                                <a href="<?php echo esc_url(add_query_arg(array('page' => 'baleno-equipment', 'edit' => $item->id), admin_url('admin.php'))); ?>" class="button">Modifica</a>
+                                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline">
+                                    <input type="hidden" name="action" value="baleno_toggle_equipment">
+                                    <input type="hidden" name="equipment_id" value="<?php echo esc_attr($item->id); ?>">
+                                    <input type="hidden" name="status" value="<?php echo $item->is_active ? 0 : 1; ?>">
+                                    <?php wp_nonce_field('baleno_toggle_equipment_' . $item->id); ?>
+                                    <button type="submit" class="button">
+                                        <?php echo $item->is_active ? 'Disattiva' : 'Attiva'; ?>
+                                    </button>
+                                </form>
+                                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline" onsubmit="return confirm('Sei sicuro di voler eliminare questa attrezzatura?');">
+                                    <input type="hidden" name="action" value="baleno_delete_equipment">
+                                    <input type="hidden" name="equipment_id" value="<?php echo esc_attr($item->id); ?>">
+                                    <?php wp_nonce_field('baleno_delete_equipment_' . $item->id); ?>
+                                    <button type="submit" class="button button-link-delete">Elimina</button>
+                                </form>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
         <?php
+    }
+
+    /**
+     * Handle adding new equipment
+     */
+    public function handle_add_equipment() {
+        if (!current_user_can('manage_baleno_bookings')) {
+            wp_die(__('Non hai i permessi per eseguire questa azione.', 'baleno-booking'));
+        }
+
+        check_admin_referer('baleno_add_equipment');
+
+        $price = isset($_POST['price']) ? $this->normalize_price_input(wp_unslash($_POST['price'])) : 0;
+
+        $result = Baleno_Booking_DB::create_equipment(array(
+            'equipment_name' => isset($_POST['equipment_name']) ? wp_unslash($_POST['equipment_name']) : '',
+            'description'    => isset($_POST['description']) ? wp_unslash($_POST['description']) : '',
+            'price'          => $price,
+            'is_active'      => isset($_POST['is_active']) ? 1 : 0,
+        ));
+
+        if (is_wp_error($result)) {
+            $this->redirect_to_equipment_page(array('baleno_error' => $result->get_error_message()));
+        }
+
+        $this->redirect_to_equipment_page(array('baleno_message' => 'Attrezzatura aggiunta correttamente.'));
+    }
+
+    /**
+     * Handle equipment update
+     */
+    public function handle_update_equipment() {
+        if (!current_user_can('manage_baleno_bookings')) {
+            wp_die(__('Non hai i permessi per eseguire questa azione.', 'baleno-booking'));
+        }
+
+        check_admin_referer('baleno_update_equipment');
+
+        $equipment_id = isset($_POST['equipment_id']) ? intval(wp_unslash($_POST['equipment_id'])) : 0;
+
+        if (!$equipment_id) {
+            $this->redirect_to_equipment_page(array('baleno_error' => 'Attrezzatura non valida.'));
+        }
+
+        $price = isset($_POST['price']) ? $this->normalize_price_input(wp_unslash($_POST['price'])) : 0;
+
+        $result = Baleno_Booking_DB::update_equipment($equipment_id, array(
+            'equipment_name' => isset($_POST['equipment_name']) ? wp_unslash($_POST['equipment_name']) : '',
+            'description'    => isset($_POST['description']) ? wp_unslash($_POST['description']) : '',
+            'price'          => $price,
+            'is_active'      => isset($_POST['is_active']) ? 1 : 0,
+        ));
+
+        if (is_wp_error($result)) {
+            $this->redirect_to_equipment_page(array('baleno_error' => $result->get_error_message()));
+        }
+
+        $this->redirect_to_equipment_page(array('baleno_message' => 'Attrezzatura aggiornata con successo.'));
+    }
+
+    /**
+     * Handle equipment deletion
+     */
+    public function handle_delete_equipment() {
+        if (!current_user_can('manage_baleno_bookings')) {
+            wp_die(__('Non hai i permessi per eseguire questa azione.', 'baleno-booking'));
+        }
+
+        $equipment_id = isset($_POST['equipment_id']) ? intval(wp_unslash($_POST['equipment_id'])) : 0;
+        check_admin_referer('baleno_delete_equipment_' . $equipment_id);
+
+        if (!$equipment_id) {
+            $this->redirect_to_equipment_page(array('baleno_error' => 'Attrezzatura non valida.'));
+        }
+
+        $result = Baleno_Booking_DB::delete_equipment($equipment_id);
+
+        if (is_wp_error($result)) {
+            $this->redirect_to_equipment_page(array('baleno_error' => $result->get_error_message()));
+        }
+
+        $this->redirect_to_equipment_page(array('baleno_message' => 'Attrezzatura eliminata.'));
+    }
+
+    /**
+     * Handle equipment activation toggle
+     */
+    public function handle_toggle_equipment() {
+        if (!current_user_can('manage_baleno_bookings')) {
+            wp_die(__('Non hai i permessi per eseguire questa azione.', 'baleno-booking'));
+        }
+
+        $equipment_id = isset($_POST['equipment_id']) ? intval(wp_unslash($_POST['equipment_id'])) : 0;
+        $status = isset($_POST['status']) ? intval(wp_unslash($_POST['status'])) : 0;
+
+        check_admin_referer('baleno_toggle_equipment_' . $equipment_id);
+
+        if (!$equipment_id) {
+            $this->redirect_to_equipment_page(array('baleno_error' => 'Attrezzatura non valida.'));
+        }
+
+        $result = Baleno_Booking_DB::set_equipment_status($equipment_id, $status);
+
+        if (is_wp_error($result)) {
+            $this->redirect_to_equipment_page(array('baleno_error' => $result->get_error_message()));
+        }
+
+        $message = $status ? 'Attrezzatura attivata.' : 'Attrezzatura disattivata.';
+        $this->redirect_to_equipment_page(array('baleno_message' => $message));
     }
 
     /**

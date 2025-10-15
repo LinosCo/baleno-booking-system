@@ -44,6 +44,109 @@ class Baleno_Booking_DB {
     }
 
     /**
+     * Get equipment by ID
+     */
+    public static function get_equipment_by_id($equipment_id) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'baleno_equipment';
+
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table WHERE id = %d",
+            $equipment_id
+        ));
+    }
+
+    /**
+     * Create new equipment
+     */
+    public static function create_equipment($data) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'baleno_equipment';
+
+        $equipment_data = array(
+            'equipment_name' => sanitize_text_field($data['equipment_name']),
+            'description'    => sanitize_textarea_field($data['description']),
+            'price'          => floatval($data['price']),
+            'is_active'      => isset($data['is_active']) ? intval($data['is_active']) : 1,
+        );
+
+        $result = $wpdb->insert($table, $equipment_data, array('%s', '%s', '%f', '%d'));
+
+        if ($result === false) {
+            return new WP_Error('db_insert_error', $wpdb->last_error);
+        }
+
+        return $wpdb->insert_id;
+    }
+
+    /**
+     * Update equipment
+     */
+    public static function update_equipment($equipment_id, $data) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'baleno_equipment';
+
+        $equipment_data = array(
+            'equipment_name' => sanitize_text_field($data['equipment_name']),
+            'description'    => sanitize_textarea_field($data['description']),
+            'price'          => floatval($data['price']),
+            'is_active'      => isset($data['is_active']) ? intval($data['is_active']) : 0,
+        );
+
+        $result = $wpdb->update(
+            $table,
+            $equipment_data,
+            array('id' => $equipment_id),
+            array('%s', '%s', '%f', '%d'),
+            array('%d')
+        );
+
+        if ($result === false) {
+            return new WP_Error('db_update_error', $wpdb->last_error);
+        }
+
+        return true;
+    }
+
+    /**
+     * Delete equipment
+     */
+    public static function delete_equipment($equipment_id) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'baleno_equipment';
+
+        $result = $wpdb->delete($table, array('id' => $equipment_id), array('%d'));
+
+        if ($result === false) {
+            return new WP_Error('db_delete_error', $wpdb->last_error);
+        }
+
+        return true;
+    }
+
+    /**
+     * Set equipment active status
+     */
+    public static function set_equipment_status($equipment_id, $is_active) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'baleno_equipment';
+
+        $result = $wpdb->update(
+            $table,
+            array('is_active' => intval($is_active)),
+            array('id' => $equipment_id),
+            array('%d'),
+            array('%d')
+        );
+
+        if ($result === false) {
+            return new WP_Error('db_update_error', $wpdb->last_error);
+        }
+
+        return true;
+    }
+
+    /**
      * Create a new booking
      */
     public static function create_booking($data) {
