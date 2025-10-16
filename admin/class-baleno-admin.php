@@ -303,6 +303,7 @@ class Baleno_Admin {
                             <th>Data/Ora</th>
                             <th>Persone</th>
                             <th>Importo</th>
+                            <th>Pagamento/Ricevuta</th>
                             <th>Stato</th>
                             <th>Creata/Modificata</th>
                             <th>Azioni</th>
@@ -311,7 +312,7 @@ class Baleno_Admin {
                     <tbody>
                         <?php if (empty($bookings)): ?>
                             <tr>
-                                <td colspan="9" style="text-align: center;">Nessuna prenotazione trovata.</td>
+                                <td colspan="10" style="text-align: center;">Nessuna prenotazione trovata.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($bookings as $booking): ?>
@@ -360,6 +361,26 @@ class Baleno_Admin {
                                     <td><?php echo esc_html($booking->num_people); ?></td>
                                     <td>
                                         <strong>€ <?php echo number_format($booking->total_price, 2, ',', '.'); ?></strong>
+                                    </td>
+                                    <td>
+                                        <div class="payment-tracking">
+                                            <label class="payment-checkbox-label">
+                                                <input type="checkbox"
+                                                       class="payment-received-checkbox"
+                                                       data-booking-id="<?php echo esc_attr($booking->id); ?>"
+                                                       <?php checked($booking->payment_received, 1); ?>
+                                                       <?php echo ($booking->booking_status === 'rejected' || $booking->booking_status === 'cancelled') ? 'disabled' : ''; ?>>
+                                                <span class="checkbox-label-text">💰 Pagato</span>
+                                            </label>
+                                            <label class="payment-checkbox-label">
+                                                <input type="checkbox"
+                                                       class="receipt-issued-checkbox"
+                                                       data-booking-id="<?php echo esc_attr($booking->id); ?>"
+                                                       <?php checked($booking->receipt_issued, 1); ?>
+                                                       <?php echo ($booking->booking_status === 'rejected' || $booking->booking_status === 'cancelled') ? 'disabled' : ''; ?>>
+                                                <span class="checkbox-label-text">📄 Ricevuta</span>
+                                            </label>
+                                        </div>
                                     </td>
                                     <td>
                                         <?php echo $this->get_status_badge($booking->booking_status); ?>
@@ -1809,6 +1830,58 @@ class Baleno_Admin {
             ));
         } else {
             wp_send_json_error(array('message' => 'Errore durante l\'aggiornamento della prenotazione: ' . $result['error']));
+        }
+    }
+
+    /**
+     * AJAX: Update payment received status
+     */
+    public function update_payment_received() {
+        check_ajax_referer('baleno_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_baleno_bookings')) {
+            wp_send_json_error(array('message' => 'Permesso negato'));
+            return;
+        }
+
+        $booking_id = intval($_POST['booking_id']);
+        $status = isset($_POST['status']) && $_POST['status'] === '1' ? 1 : 0;
+
+        $result = Baleno_Booking_DB::update_payment_received($booking_id, $status);
+
+        if ($result !== false) {
+            wp_send_json_success(array(
+                'message' => 'Stato pagamento aggiornato',
+                'status' => $status
+            ));
+        } else {
+            wp_send_json_error(array('message' => 'Errore durante l\'aggiornamento'));
+        }
+    }
+
+    /**
+     * AJAX: Update receipt issued status
+     */
+    public function update_receipt_issued() {
+        check_ajax_referer('baleno_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_baleno_bookings')) {
+            wp_send_json_error(array('message' => 'Permesso negato'));
+            return;
+        }
+
+        $booking_id = intval($_POST['booking_id']);
+        $status = isset($_POST['status']) && $_POST['status'] === '1' ? 1 : 0;
+
+        $result = Baleno_Booking_DB::update_receipt_issued($booking_id, $status);
+
+        if ($result !== false) {
+            wp_send_json_success(array(
+                'message' => 'Stato ricevuta aggiornato',
+                'status' => $status
+            ));
+        } else {
+            wp_send_json_error(array('message' => 'Errore durante l\'aggiornamento'));
         }
     }
 }

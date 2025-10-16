@@ -378,6 +378,38 @@ class Baleno_Booking_DB {
     }
 
     /**
+     * Update payment received status
+     */
+    public static function update_payment_received($booking_id, $status) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'baleno_bookings';
+
+        return $wpdb->update(
+            $table,
+            array('payment_received' => $status ? 1 : 0),
+            array('id' => $booking_id),
+            array('%d'),
+            array('%d')
+        );
+    }
+
+    /**
+     * Update receipt issued status
+     */
+    public static function update_receipt_issued($booking_id, $status) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'baleno_bookings';
+
+        return $wpdb->update(
+            $table,
+            array('receipt_issued' => $status ? 1 : 0),
+            array('id' => $booking_id),
+            array('%d'),
+            array('%d')
+        );
+    }
+
+    /**
      * Delete booking
      */
     public static function delete_booking($booking_id) {

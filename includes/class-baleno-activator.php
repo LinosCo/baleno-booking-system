@@ -61,6 +61,8 @@ class Baleno_Activator {
             caution_paid decimal(10,2) DEFAULT 0.00,
             payment_status varchar(50) DEFAULT 'pending',
             payment_receipt varchar(255),
+            payment_received tinyint(1) DEFAULT 0,
+            receipt_issued tinyint(1) DEFAULT 0,
             booking_status varchar(50) DEFAULT 'pending',
             approved_by bigint(20),
             approved_date datetime,

@@ -48,6 +48,15 @@ register_deactivation_hook(__FILE__, 'deactivate_baleno_booking');
 require BALENO_BOOKING_PLUGIN_DIR . 'includes/class-baleno-booking.php';
 
 /**
+ * Run database migrations
+ */
+function baleno_run_migrations() {
+    require_once BALENO_BOOKING_PLUGIN_DIR . 'includes/class-baleno-migration.php';
+    Baleno_Migration::run();
+}
+add_action('plugins_loaded', 'baleno_run_migrations');
+
+/**
  * Begins execution of the plugin.
  */
 function run_baleno_booking() {

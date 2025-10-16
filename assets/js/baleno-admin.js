@@ -445,6 +445,90 @@ jQuery(document).ready(function($) {
         }
     });
 
+    // ========== PAYMENT TRACKING CHECKBOXES ==========
+
+    // Handle payment received checkbox
+    $(document).on('change', '.payment-received-checkbox', function() {
+        var $checkbox = $(this);
+        var bookingId = $checkbox.data('booking-id');
+        var isChecked = $checkbox.is(':checked');
+
+        // Disable checkbox while processing
+        $checkbox.prop('disabled', true);
+
+        $.ajax({
+            url: balenoAdmin.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'baleno_update_payment_received',
+                nonce: balenoAdmin.nonce,
+                booking_id: bookingId,
+                status: isChecked ? '1' : '0'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Show success feedback
+                    $checkbox.closest('.payment-tracking').css('background-color', '#d4edda');
+                    setTimeout(function() {
+                        $checkbox.closest('.payment-tracking').css('background-color', '');
+                    }, 1000);
+                } else {
+                    alert('Errore: ' + response.data.message);
+                    // Revert checkbox state
+                    $checkbox.prop('checked', !isChecked);
+                }
+                $checkbox.prop('disabled', false);
+            },
+            error: function() {
+                alert('Errore durante l\'aggiornamento dello stato pagamento');
+                // Revert checkbox state
+                $checkbox.prop('checked', !isChecked);
+                $checkbox.prop('disabled', false);
+            }
+        });
+    });
+
+    // Handle receipt issued checkbox
+    $(document).on('change', '.receipt-issued-checkbox', function() {
+        var $checkbox = $(this);
+        var bookingId = $checkbox.data('booking-id');
+        var isChecked = $checkbox.is(':checked');
+
+        // Disable checkbox while processing
+        $checkbox.prop('disabled', true);
+
+        $.ajax({
+            url: balenoAdmin.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'baleno_update_receipt_issued',
+                nonce: balenoAdmin.nonce,
+                booking_id: bookingId,
+                status: isChecked ? '1' : '0'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Show success feedback
+                    $checkbox.closest('.payment-tracking').css('background-color', '#d4edda');
+                    setTimeout(function() {
+                        $checkbox.closest('.payment-tracking').css('background-color', '');
+                    }, 1000);
+                } else {
+                    alert('Errore: ' + response.data.message);
+                    // Revert checkbox state
+                    $checkbox.prop('checked', !isChecked);
+                }
+                $checkbox.prop('disabled', false);
+            },
+            error: function() {
+                alert('Errore durante l\'aggiornamento dello stato ricevuta');
+                // Revert checkbox state
+                $checkbox.prop('checked', !isChecked);
+                $checkbox.prop('disabled', false);
+            }
+        });
+    });
+
     // ========== EDIT BOOKING FORM ==========
 
     // Initialize price calculation for edit form with delay to ensure DOM is ready

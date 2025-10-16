@@ -49,6 +49,8 @@ class Baleno_Booking {
         $this->loader->add_action('wp_ajax_baleno_get_bookings', $plugin_admin, 'get_bookings_ajax');
         $this->loader->add_action('wp_ajax_baleno_create_manual_booking', $plugin_admin, 'create_manual_booking');
         $this->loader->add_action('wp_ajax_baleno_update_booking', $plugin_admin, 'update_booking');
+        $this->loader->add_action('wp_ajax_baleno_update_payment_received', $plugin_admin, 'update_payment_received');
+        $this->loader->add_action('wp_ajax_baleno_update_receipt_issued', $plugin_admin, 'update_receipt_issued');
     }
 
     private function define_public_hooks() {
