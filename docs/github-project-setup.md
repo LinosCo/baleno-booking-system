@@ -45,6 +45,38 @@ git push -u origin main
 
 Sostituisci `<tuo-utente>` e `<nome-repository>` con i valori corretti.
 
+### Se hai collegato il repository sbagliato
+
+Se ti accorgi di aver puntato al progetto GitHub errato (ad esempio perché il codice pubblicato non corrisponde), puoi correggere la configurazione locale in pochi passi:
+
+1. Controlla a quale repository stai puntando:
+
+   ```bash
+   git remote -v
+   ```
+
+2. Rimuovi o rinomina il remote errato:
+
+   ```bash
+   git remote remove origin
+   # oppure, per rinominare invece di rimuovere:
+   # git remote rename origin old-origin
+   ```
+
+3. Aggiungi il nuovo repository corretto:
+
+   ```bash
+   git remote add origin https://github.com/<tuo-utente>/<nuovo-repository>.git
+   ```
+
+4. Invia nuovamente il codice:
+
+   ```bash
+   git push -u origin main
+   ```
+
+> Suggerimento: se sul repository sbagliato è già stato caricato del codice, archivialo o impostalo come privato da GitHub per evitare confusione. Puoi poi eliminare le release/branch non più necessari.
+
 ## 5. Creare un progetto GitHub (Project Board)
 
 Oltre al repository puoi organizzare le attività con un **GitHub Project**:
