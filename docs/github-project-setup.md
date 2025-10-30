@@ -77,6 +77,46 @@ Se ti accorgi di aver puntato al progetto GitHub errato (ad esempio perché il c
 
 > Suggerimento: se sul repository sbagliato è già stato caricato del codice, archivialo o impostalo come privato da GitHub per evitare confusione. Puoi poi eliminare le release/branch non più necessari.
 
+### Cambiare repository GitHub dopo il primo push
+
+Se il progetto è già online ma vuoi spostare *tutta* la cronologia su un nuovo repository (ad esempio per rinominare l'organizzazione o separare ambienti di lavoro), segui questi passaggi:
+
+1. **Tieni traccia del remoto attuale** (facoltativo ma consigliato):
+
+   ```bash
+   git remote rename origin old-origin
+   ```
+
+   In questo modo puoi ancora eseguire push/pull verso il repository precedente in caso di emergenza.
+
+2. **Crea il nuovo repository vuoto su GitHub** senza README/LICENZA/`.gitignore`.
+
+3. **Collega il nuovo remoto** mantenendo la stessa branch principale:
+
+   ```bash
+   git remote add origin https://github.com/<tuo-utente>/<nuovo-repository>.git
+   git push -u origin main
+   ```
+
+4. **Verifica che tutte le branch siano disponibili nel nuovo repository**:
+
+   ```bash
+   git push origin --all
+   git push origin --tags
+   ```
+
+5. **Aggiorna le integrazioni esterne** (CI/CD, webhook, deploy keys) in modo che puntino al nuovo URL GitHub.
+
+6. **Quando sei certo che la migrazione è completa**, puoi rimuovere il vecchio remoto locale:
+
+   ```bash
+   git remote remove old-origin
+   ```
+
+   Se il repository precedente non serve più, valuta se archiviarlo o eliminarlo da GitHub per evitare contributi involontari.
+
+> Nota: se preferisci effettuare una *transfer ownership* direttamente da GitHub (Settings → Transfer), la cronologia viene spostata automaticamente. Usa la procedura qui sopra se vuoi mantenere due repository distinti o hai bisogno di un passaggio graduale.
+
 ## 5. Creare un progetto GitHub (Project Board)
 
 Oltre al repository puoi organizzare le attività con un **GitHub Project**:
