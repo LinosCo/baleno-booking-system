@@ -117,6 +117,38 @@ Se il progetto è già online ma vuoi spostare *tutta* la cronologia su un nuovo
 
 > Nota: se preferisci effettuare una *transfer ownership* direttamente da GitHub (Settings → Transfer), la cronologia viene spostata automaticamente. Usa la procedura qui sopra se vuoi mantenere due repository distinti o hai bisogno di un passaggio graduale.
 
+### Ripartire completamente se hai clonato/progettato nel repository sbagliato
+
+Se ti accorgi che l'intero progetto vive nel repository sbagliato (ad esempio stai sviluppando l'applicazione Baleno all'interno di un repository WordPress ereditato), puoi ricominciare in modo sicuro mantenendo il codice:
+
+1. **Crea una copia di sicurezza della cartella di lavoro** (es. `cp -R baleno-booking-system baleno-booking-system-backup`).
+2. **Rimuovi la cronologia Git locale errata** eliminando la cartella `.git` nella directory di progetto:
+
+   ```bash
+   rm -rf .git
+   ```
+
+   In questo modo conserverai i file ma azzererai l'associazione con il repository sbagliato.
+3. **Inizializza un nuovo repository pulito** per il progetto corretto:
+
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit for Baleno Academy platform"
+   ```
+
+4. **Crea (o seleziona) il repository giusto su GitHub** e collegalo come descritto nella sezione “Collegare il repository remoto”.
+5. **Verifica che l'origine punti davvero al nuovo URL** prima di eseguire `git push`:
+
+   ```bash
+   git remote -v
+   ```
+
+   L'output deve mostrare solo l'URL del nuovo repository.
+6. **Elimina o archivia il repository precedente su GitHub** per evitare che altri collaboratori continuino a utilizzarlo per errore.
+
+> Suggerimento: se devi mantenere entrambi i repository, aggiungi un file `README` visibile che spieghi quale progetto vive in ciascuno di essi per ridurre la confusione.
+
 ## 5. Creare un progetto GitHub (Project Board)
 
 Oltre al repository puoi organizzare le attività con un **GitHub Project**:

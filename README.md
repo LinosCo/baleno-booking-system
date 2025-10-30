@@ -258,9 +258,10 @@ Se desideri creare un nuovo repository GitHub per questo progetto, nella cartell
 - creare il repository remoto su GitHub;
 - collegare il tuo codice locale al repository appena creato;
 - impostare un Project Board per organizzare le attività;
-- configurare opzioni avanzate come protezione dei branch e workflow automatizzati.
+- configurare opzioni avanzate come protezione dei branch e workflow automatizzati;
+- **staccare completamente il progetto da un repository sbagliato** e collegarlo a quello corretto senza perdere file.
 
-La guida include anche un approfondimento su come cambiare repository GitHub dopo il primo push: potrai rinominare il remote locale, migrare tutta la cronologia verso un nuovo URL e aggiornare le integrazioni senza perdere dati.
+La guida include anche un approfondimento su come cambiare repository GitHub dopo il primo push e su come ripartire da zero eliminando la cronologia legata a un repository errato prima di collegare quello nuovo.
 
 Segui quei passaggi per pubblicare Baleno Booking System online e collaborare facilmente con il tuo team.
 
